@@ -61,7 +61,58 @@ Header.Payload.Signature
 
 ---
 
-### 3. การออกแบบฐานข้อมูล
+### 3. Express.js — เวอร์ชันและ Built-in Middleware
+
+#### Express 4.16+ — `express.json()` แทน `body-parser`
+
+ตั้งแต่ **Express 4.16.0** (ปี 2017) เป็นต้นมา Express มี built-in middleware สำหรับอ่าน JSON request body แล้ว จึงไม่จำเป็นต้องติดตั้ง `body-parser` แยกต่างหากอีกต่อไป
+
+```javascript
+// ❌ เดิม — ต้องติดตั้ง body-parser แยก
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
+
+// ✅ ใหม่ — ใช้ express.json() ที่มีอยู่แล้วใน Express 4.16+
+app.use(express.json());
+```
+
+> 💡 `body-parser` ยังใช้งานได้และ Express ใช้มันภายในอยู่เช่นกัน แต่ไม่จำเป็นต้องประกาศเองอีกแล้ว
+
+#### Express 5 — Stable Release (ตุลาคม 2024)
+
+Express 5 เผยแพร่เป็น stable release ในเดือนตุลาคม 2024 มีการเปลี่ยนแปลงสำคัญคือ **route handlers รองรับ `async/await` โดยตรง** โดย Express จะจัดการ error จาก Promise ที่ reject ให้อัตโนมัติ
+
+```javascript
+// Express 4 — ต้องใช้ try/catch เองในทุก async route
+app.get('/api/bookings', authenticateToken, async (req, res) => {
+  try {
+    const rows = await db.allAsync('SELECT * FROM bookings ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message }); // ต้องจัดการเอง
+  }
+});
+
+// Express 5 — ไม่ต้อง try/catch, Express รับ error ที่เกิดจาก async ให้เอง
+app.get('/api/bookings', authenticateToken, async (req, res) => {
+  const rows = await db.allAsync('SELECT * FROM bookings ORDER BY created_at DESC');
+  res.json(rows);
+  // ถ้า db.allAsync() throw error → Express ส่งไปยัง error handler อัตโนมัติ
+});
+```
+
+> 📌 **หมายเหตุ:** ใบงานนี้ใช้ **Express 4** ซึ่งยังเป็น LTS และใช้งานได้ปกติ การที่รู้จัก Express 5 ช่วยให้เข้าใจทิศทางการพัฒนาของ Node.js ecosystem
+
+| | Express 4 | Express 5 |
+|--|-----------|-----------|
+| ติดตั้ง | `npm install express` | `npm install express@5` |
+| async route error | ต้องจัดการด้วย try/catch | Express จัดการอัตโนมัติ |
+| body-parser built-in | ✅ (4.16+) | ✅ |
+| Node.js รองรับ | v0.10+ | v18+ |
+
+---
+
+### 4. การออกแบบฐานข้อมูล
 
 ระบบใช้ **2 ตาราง** ใน SQLite
 
@@ -121,9 +172,11 @@ mkdir backend frontend
 ```bash
 cd backend
 npm init -y
-npm install express sqlite3 cors body-parser jsonwebtoken bcryptjs
+npm install express sqlite3 cors jsonwebtoken bcryptjs
 npm install --save-dev nodemon
 ```
+
+> 💡 **ไม่ต้องติดตั้ง `body-parser`** — Express 4.16+ มี `express.json()` ในตัวแล้ว
 
 เพิ่ม scripts ในไฟล์ `package.json`
 
@@ -135,6 +188,8 @@ npm install --save-dev nodemon
   }
 }
 ```
+
+> 📌 ไฟล์ `package.json` ที่สมบูรณ์จะมี dependencies เพียง `express`, `sqlite3`, `cors`, `jsonwebtoken`, `bcryptjs` — ไม่มี `body-parser`
 
 ---
 
@@ -208,7 +263,6 @@ module.exports = db;
 ```javascript
 const express    = require('express');
 const cors       = require('cors');
-const bodyParser = require('body-parser');
 const jwt        = require('jsonwebtoken');
 const bcrypt     = require('bcryptjs');
 const db         = require('./database');
@@ -218,7 +272,7 @@ const PORT       = 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Express 4.16+ — ไม่ต้องใช้ body-parser อีกต่อไป
 
 // Middleware: ตรวจสอบ JWT Token ก่อนเข้าถึง protected routes
 const authenticateToken = (req, res, next) => {
@@ -1320,7 +1374,8 @@ hotel-booking-system/
 | Layer | เทคโนโลยี | หน้าที่ |
 |-------|----------|---------|
 | Database | SQLite 3 | เก็บข้อมูล users, bookings |
-| Backend API | Node.js + Express | REST endpoints |
+| Backend API | Node.js + Express 4 | REST endpoints |
+| JSON Parsing | `express.json()` (built-in) | อ่าน request body — ไม่ต้องใช้ body-parser |
 | Authentication | JWT + bcryptjs | ออก token / ตรวจสอบสิทธิ์ |
 | Frontend State | React Context API | แชร์ user/token ทั่วแอป |
 | UI Components | React + Tailwind CSS | หน้าจอต่างๆ |
@@ -1349,6 +1404,12 @@ hotel-booking-system/
 เขียนคำตอบที่นี่
 ```
 
+**คำถามที่ 4:** เหตุใดจึงไม่ควรใช้ `body-parser` แยกต่างหากใน Express 4.16+ และ Express 5 ต่างจาก Express 4 อย่างไรในแง่ของการจัดการ async route handlers?
+
+```
+เขียนคำตอบที่นี่
+```
+
 ---
 
 ## สิ่งที่ต้องส่ง
@@ -1356,7 +1417,7 @@ hotel-booking-system/
 - [ ] รูปผลการทดลองตามที่กำหนดในแต่ละขั้นตอน (แทรกในไฟล์นี้)
 - [ ] โค้ดที่แก้ไข: `server.js` (DELETE endpoint + GET `/api/users`)
 - [ ] ผลการทดสอบ Login / Logout บน Frontend พร้อมรูปภาพ
-- [ ] คำตอบคำถามท้ายใบงาน ครบทั้ง 3 ข้อ
+- [ ] คำตอบคำถามท้ายใบงาน ครบทั้ง 4 ข้อ
 
 ---
 
