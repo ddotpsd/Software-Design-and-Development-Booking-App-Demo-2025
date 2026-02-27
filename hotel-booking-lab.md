@@ -491,7 +491,7 @@ Headers: Content-Type: application/json
 
 > ![Booking](imgl/ex3.png)
 > ![Booking2](imgl/ex3-2.png)
-> ![Booking3](imgl/ex3.png)
+> ![Booking3](imgl/ex3-3.png)
 ---
 
 #### 2.3.2 ดึงข้อมูลทั้งหมด (GET All)
