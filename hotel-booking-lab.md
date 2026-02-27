@@ -411,7 +411,7 @@ Server running on port 3001
 
 ### 📸 บันทึกผลการทดลอง: ผลการรัน Backend Server
 
-> แทรกรูปภาพที่นี่
+> ![ผลการทดลอง](imgl/ex1.png)
 
 ---
 
@@ -458,8 +458,7 @@ Server running on port 3001
 
 ### 📸 บันทึกผลการทดลอง: ผลการทดสอบ Login และ Token
 
-> แทรกรูปภาพที่นี่
-
+> ![test request](imgl/ex2.png)
 ---
 
 ### 2.3 การทดสอบ CRUD Operations
@@ -490,8 +489,9 @@ Headers: Content-Type: application/json
 
 ### 📸 บันทึกผลการทดลอง: ผลการเพิ่มข้อมูลการจอง (POST) 3 รายการ
 
-> แทรกรูปภาพที่นี่
-
+> ![Booking](imgl/ex3.png)
+> ![Booking2](imgl/ex3-2.png)
+> ![Booking3](imgl/ex3.png)
 ---
 
 #### 2.3.2 ดึงข้อมูลทั้งหมด (GET All)
@@ -506,7 +506,7 @@ Headers: Authorization: Bearer {{token}}
 
 ### 📸 บันทึกผลการทดลอง: ผลการ GET ข้อมูลทั้งหมด
 
-> แทรกรูปภาพที่นี่
+> ![Get All Booking Detail](imgl/ex4.png)
 
 > ⚠️ หาก response แจ้ง `"Token ไม่ถูกต้องหรือหมดอายุ"` ให้ Login ใหม่แล้วอัปเดต token ใน Globals
 
@@ -522,7 +522,7 @@ Headers: Authorization: Bearer {{token}}
 
 ### 📸 บันทึกผลการทดลอง: ผลการ GET ข้อมูลโดยระบุ ID
 
-> แทรกรูปภาพที่นี่
+> ![Get Booking Detail By ID](imgl/ex5.png)
 
 ---
 
@@ -550,7 +550,7 @@ Headers: Authorization: Bearer {{token}}
 
 ### 📸 บันทึกผลการทดลอง: ผลการแก้ไขข้อมูล (PUT) — ต้องเห็น comment ที่ไม่เป็น null
 
-> แทรกรูปภาพที่นี่
+> ![Update Detail Database](imgl/ex6.png)
 
 ---
 
@@ -564,7 +564,7 @@ Headers: Authorization: Bearer {{token}}
 
 ### 📸 บันทึกผลการทดลอง: ผลการลบข้อมูล (DELETE)
 
-> แทรกรูปภาพที่นี่
+> ![Delete Booking](imgl/ex7.png)
 
 ---
 
@@ -575,8 +575,28 @@ Headers: Authorization: Bearer {{token}}
 
 ### 📸 บันทึกผลการทดลอง: ผลการ DELETE with custom status และ GET /api/users
 
-> แทรกรูปภาพที่นี่
+> ![Delete With Name On](imgl/ex8-2.png)
+```javascript
+  // DELETE /api/bookings/:id — ลบการจอง (ต้อง login)
+app.delete('/api/bookings/:id', authenticateToken, (req, res) => {
+  db.run('DELETE FROM bookings WHERE id = ?', [req.params.id], function(err) {
+    if (err)             return res.status(400).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'ไม่พบข้อมูลการจอง' });
+    res.json({ message: 'ลบข้อมูลสำเร็จ โดย ภูผาสุข', id: req.params.id });
+  });
+});
+```
 
+>![Add Endpoint Get /api/users](imgl/ex8.png)
+```javascript
+app.get('/api/users', authenticateToken, (req, res) => {
+  db.all('SELECT id , username ,role, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
+    if (err)  return res.status(400).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'ไม่พบข้อมูลผู้ใช้' });
+    res.json(row);
+  });
+});
+```
 ---
 
 ## การทดลองที่ 3: การพัฒนา Frontend ด้วย React
